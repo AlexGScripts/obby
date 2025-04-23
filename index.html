@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>4D Obby Adventure</title>
+    <title>4D Mega Obby Adventure</title>
     <style>
         body {
             margin: 0;
             padding: 0;
-            background-color: #87CEEB; /* Blue Sky */
+            overflow: hidden;
+            background-color: #87CEEB;
         }
 
         #game-container {
             position: relative;
             width: 100vw;
             height: 100vh;
-            overflow: hidden;
         }
 
         #gameCanvas {
@@ -51,8 +51,7 @@
             position: absolute;
             bottom: 50px;
             left: 20px;
-            display: none; /* Hidden by default for desktop */
-            z-index: 1;
+            display: none;
         }
 
         #jump-btn {
@@ -83,6 +82,7 @@
             left: 25px;
         }
 
+        /* For game components */
         .stages, .checkpoints, .killbricks {
             display: none; /* Will be shown once the game starts */
         }
@@ -94,7 +94,7 @@
 
         <!-- Title Screen -->
         <div id="title-screen">
-            <h1>4D Obby Adventure</h1>
+            <h1>4D Mega Obby Adventure</h1>
             <button id="start-btn">Start Game</button>
         </div>
 
@@ -109,103 +109,95 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // Wait for the start button click
-        document.getElementById('start-btn').onclick = startGame;
-
-        let scene, camera, renderer, player, controls;
+        let scene, camera, renderer, player, controls, clock;
         let isMobile = /Mobi|Android/i.test(navigator.userAgent);
-        let jump = false;
+        let jump = false, velocity = new THREE.Vector3(), onGround = false, speed = 0.1;
+        let keyPresses = {w: false, a: false, s: false, d: false};
+
+        document.getElementById('start-btn').onclick = startGame;
 
         function startGame() {
             document.getElementById('title-screen').style.display = 'none';
             initGame();
         }
 
-        // Initialize the game
         function initGame() {
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gameCanvas') });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
 
-            // Skybox
+            clock = new THREE.Clock();
+
+            // Skybox (simple texture as background)
             let loader = new THREE.TextureLoader();
-            let texture = loader.load('https://www.w3schools.com/w3images/forest.jpg'); // Set a simple texture for the sky
+            let texture = loader.load('https://www.w3schools.com/w3images/forest.jpg');
             scene.background = texture;
 
-            // Add lighting
-            let light = new THREE.AmbientLight(0x404040); // Ambient light
+            // Lighting
+            let light = new THREE.AmbientLight(0x404040);
             scene.add(light);
 
-            // Add player cube (for now as placeholder)
+            // Player (Cube for now)
             player = new THREE.Mesh(
                 new THREE.BoxGeometry(1, 1, 1),
                 new THREE.MeshBasicMaterial({ color: 0x00ff00 })
             );
             scene.add(player);
-            player.position.y = 1;
+            player.position.set(0, 1, 0);
 
-            // Create the ground and stages
+            // Camera setup
+            camera.position.z = 10;
+
+            // Ground
             let ground = new THREE.Mesh(
                 new THREE.PlaneGeometry(100, 100),
-                new THREE.MeshBasicMaterial({ color: 0x555555 })
+                new THREE.MeshBasicMaterial({ color: 0x555555, side: THREE.DoubleSide })
             );
             ground.rotation.x = -Math.PI / 2;
             scene.add(ground);
 
-            // Add some stages, checkpoints, and killbricks
+            // Add 20 stages
             createObby();
 
-            // Camera setup
-            camera.position.z = 5;
-
-            // Controls (Keyboard/Mouse for PC, Touch for Mobile)
+            // Event listeners for movement (WASD for PC)
             if (isMobile) {
                 document.getElementById('mobile-controls').style.display = 'block';
-                // Add mobile controls (touch joystick and jump button)
                 document.getElementById('jump-btn').onclick = () => { jump = true; };
-                // Simple joystick handling
             } else {
                 window.addEventListener('keydown', onKeyDown, false);
+                window.addEventListener('keyup', onKeyUp, false);
             }
 
-            // Animation Loop
             animate();
         }
 
         function onKeyDown(event) {
-            if (event.code === 'Space') {
-                jump = true;
-            }
-            if (event.code === 'ArrowUp') {
-                camera.rotation.x -= 0.1;
-            }
-            if (event.code === 'ArrowDown') {
-                camera.rotation.x += 0.1;
-            }
-            if (event.code === 'ArrowLeft') {
-                camera.rotation.y -= 0.1;
-            }
-            if (event.code === 'ArrowRight') {
-                camera.rotation.y += 0.1;
-            }
+            if (event.code === 'Space') jump = true;
+            if (event.code === 'KeyW') keyPresses.w = true;
+            if (event.code === 'KeyA') keyPresses.a = true;
+            if (event.code === 'KeyS') keyPresses.s = true;
+            if (event.code === 'KeyD') keyPresses.d = true;
         }
 
-        // Function to create the obby stages, checkpoints, and killbricks
+        function onKeyUp(event) {
+            if (event.code === 'KeyW') keyPresses.w = false;
+            if (event.code === 'KeyA') keyPresses.a = false;
+            if (event.code === 'KeyS') keyPresses.s = false;
+            if (event.code === 'KeyD') keyPresses.d = false;
+        }
+
         function createObby() {
             let stage, checkpoint, killbrick;
-            let stageCount = 20;
-
-            for (let i = 0; i < stageCount; i++) {
+            for (let i = 0; i < 20; i++) {
                 stage = new THREE.Mesh(
                     new THREE.BoxGeometry(5, 1, 5),
                     new THREE.MeshBasicMaterial({ color: 0x00ff00 })
                 );
-                stage.position.y = i * 2;
-                stage.position.z = -i * 10;
+                stage.position.set(0, i * 2, -i * 10);
                 scene.add(stage);
 
-                // Add checkpoints
                 checkpoint = new THREE.Mesh(
                     new THREE.SphereGeometry(0.5),
                     new THREE.MeshBasicMaterial({ color: 0x0000ff })
@@ -213,7 +205,6 @@
                 checkpoint.position.set(0, i * 2 + 1, -i * 10);
                 scene.add(checkpoint);
 
-                // Add killbricks
                 killbrick = new THREE.Mesh(
                     new THREE.BoxGeometry(5, 1, 5),
                     new THREE.MeshBasicMaterial({ color: 0xff0000 })
@@ -226,19 +217,34 @@
         function animate() {
             requestAnimationFrame(animate);
 
+            let delta = clock.getDelta();
+            onGround = false;
+            velocity.x = 0;
+            velocity.z = 0;
+            if (keyPresses.w) velocity.z -= speed;
+            if (keyPresses.s) velocity.z += speed;
+            if (keyPresses.a) velocity.x -= speed;
+            if (keyPresses.d) velocity.x += speed;
+
+            // Jumping logic
             if (jump) {
-                player.position.y += 0.2;
-                setTimeout(() => { player.position.y -= 0.2; jump = false; }, 200);
+                if (onGround) velocity.y = 0.2; // Apply upward force
+                jump = false;
             }
 
-            // Basic movement
-            if (player.position.y < 0) {
+            player.position.add(velocity);
+
+            // Prevent player from falling through the ground
+            if (player.position.y < 1) {
                 player.position.y = 1;
+                onGround = true;
             }
 
+            // Render the scene
             renderer.render(scene, camera);
         }
 
+        // Resize handling
         window.addEventListener('resize', () => {
             renderer.setSize(window.innerWidth, window.innerHeight);
             camera.aspect = window.innerWidth / window.innerHeight;
