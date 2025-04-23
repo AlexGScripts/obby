@@ -1,238 +1,249 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3D Obby Game</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4D Obby Adventure</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #87CEEB; /* Blue Sky */
+        }
 
-    body {
-      font-family: Arial, sans-serif;
-      overflow: hidden;
-      background-color: #f4f4f4;
-    }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-    #title-screen {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
-      color: #fff;
-      background-color: rgba(0, 0, 0, 0.7);
-      padding: 20px;
-      border-radius: 10px;
-    }
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
 
-    #title-screen h1 {
-      font-size: 3rem;
-      margin-bottom: 20px;
-    }
+        #title-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            font-size: 50px;
+            font-family: Arial, sans-serif;
+            z-index: 10;
+        }
 
-    #start-button {
-      padding: 10px 20px;
-      font-size: 1.5rem;
-      background-color: #ff6600;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+        #start-btn {
+            padding: 20px;
+            background-color: #0044cc;
+            color: white;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
 
-    #start-button:hover {
-      background-color: #e65c00;
-    }
+        #mobile-controls {
+            position: absolute;
+            bottom: 50px;
+            left: 20px;
+            display: none; /* Hidden by default for desktop */
+            z-index: 1;
+        }
 
-    #game-canvas {
-      display: block;
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: #87ceeb; /* Blue Skybox */
-    }
+        #jump-btn {
+            padding: 15px;
+            background-color: blue;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
 
-    #mobile-controls {
-      display: none;
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-      z-index: 10;
-    }
+        #joystick {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 255, 0.5);
+            position: relative;
+        }
 
-    #joystick {
-      display: flex;
-      flex-direction: column;
-      margin-right: 20px;
-    }
+        .stick {
+            width: 50px;
+            height: 50px;
+            background-color: blue;
+            border-radius: 50%;
+            position: absolute;
+            top: 25px;
+            left: 25px;
+        }
 
-    #joystick button {
-      background-color: rgba(0, 0, 0, 0.5);
-      color: white;
-      padding: 10px;
-      border-radius: 50%;
-      margin: 5px;
-      width: 50px;
-      height: 50px;
-      font-size: 1.5rem;
-      text-align: center;
-    }
-
-    #jump-button {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      padding: 20px;
-      background-color: #28a745;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      font-size: 1.5rem;
-    }
-
-    #jump-button:hover {
-      background-color: #218838;
-    }
-
-    /* Mobile View */
-    @media (max-width: 768px) {
-      #mobile-controls {
-        display: block;
-      }
-
-      #game-canvas {
-        display: none;
-      }
-    }
-  </style>
+        .stages, .checkpoints, .killbricks {
+            display: none; /* Will be shown once the game starts */
+        }
+    </style>
 </head>
 <body>
-  <!-- Title Screen -->
-  <div id="title-screen">
-    <h1>3D Obby Game</h1>
-    <button id="start-button">Start Game</button>
-  </div>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
 
-  <!-- Game Canvas -->
-  <canvas id="game-canvas"></canvas>
+        <!-- Title Screen -->
+        <div id="title-screen">
+            <h1>4D Obby Adventure</h1>
+            <button id="start-btn">Start Game</button>
+        </div>
 
-  <!-- Mobile Controls -->
-  <div id="mobile-controls">
-    <div id="joystick">
-      <button id="move-left">←</button>
-      <button id="move-right">→</button>
-      <button id="move-up">↑</button>
+        <!-- Mobile Controls -->
+        <div id="mobile-controls">
+            <button id="jump-btn">Jump</button>
+            <div id="joystick">
+                <div class="stick"></div>
+            </div>
+        </div>
     </div>
-    <button id="jump-button">Jump</button>
-  </div>
 
-  <!-- THREE.js library -->
-  <script src="https://cdn.skypack.dev/three@0.150.1"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Wait for the start button click
+        document.getElementById('start-btn').onclick = startGame;
 
-  <script>
-    // Title screen handling
-    const titleScreen = document.getElementById('title-screen');
-    const startButton = document.getElementById('start-button');
-    const canvas = document.getElementById('game-canvas');
+        let scene, camera, renderer, player, controls;
+        let isMobile = /Mobi|Android/i.test(navigator.userAgent);
+        let jump = false;
 
-    // Start game
-    startButton.addEventListener('click', () => {
-      titleScreen.style.display = 'none';
-      initGame();
-    });
+        function startGame() {
+            document.getElementById('title-screen').style.display = 'none';
+            initGame();
+        }
 
-    // Game setup
-    function initGame() {
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-      const renderer = new THREE.WebGLRenderer({ canvas });
-      renderer.setSize(window.innerWidth, window.innerHeight);
+        // Initialize the game
+        function initGame() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gameCanvas') });
+            renderer.setSize(window.innerWidth, window.innerHeight);
 
-      // Skybox setup (using 6 textures)
-      const textureLoader = new THREE.CubeTextureLoader();
-      const texture = textureLoader.load([
-        'textures/px.jpg', // right
-        'textures/nx.jpg', // left
-        'textures/py.jpg', // top
-        'textures/ny.jpg', // bottom
-        'textures/pz.jpg', // front
-        'textures/nz.jpg'  // back
-      ]);
+            // Skybox
+            let loader = new THREE.TextureLoader();
+            let texture = loader.load('https://www.w3schools.com/w3images/forest.jpg'); // Set a simple texture for the sky
+            scene.background = texture;
 
-      // Apply the skybox texture to the scene background
-      scene.background = texture;
+            // Add lighting
+            let light = new THREE.AmbientLight(0x404040); // Ambient light
+            scene.add(light);
 
-      // Player (Orange Cube)
-      const player = new THREE.Mesh(
-        new THREE.BoxGeometry(1, 1, 1),
-        new THREE.MeshBasicMaterial({ color: 0xff6600 })
-      );
-      player.position.set(0, 1, 0);
-      scene.add(player);
+            // Add player cube (for now as placeholder)
+            player = new THREE.Mesh(
+                new THREE.BoxGeometry(1, 1, 1),
+                new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+            );
+            scene.add(player);
+            player.position.y = 1;
 
-      // Platforms (Green)
-      const platform = new THREE.Mesh(
-        new THREE.BoxGeometry(5, 1, 5),
-        new THREE.MeshBasicMaterial({ color: 0x00ff00 })
-      );
-      platform.position.set(0, 0, 0);
-      scene.add(platform);
+            // Create the ground and stages
+            let ground = new THREE.Mesh(
+                new THREE.PlaneGeometry(100, 100),
+                new THREE.MeshBasicMaterial({ color: 0x555555 })
+            );
+            ground.rotation.x = -Math.PI / 2;
+            scene.add(ground);
 
-      // Camera Setup
-      camera.position.z = 5;
+            // Add some stages, checkpoints, and killbricks
+            createObby();
 
-      // Controls (WASD for PC, Joystick for mobile)
-      const keys = {};
-      const touchControls = { left: false, right: false, up: false };
+            // Camera setup
+            camera.position.z = 5;
 
-      // Keyboard (PC) controls
-      document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-      document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+            // Controls (Keyboard/Mouse for PC, Touch for Mobile)
+            if (isMobile) {
+                document.getElementById('mobile-controls').style.display = 'block';
+                // Add mobile controls (touch joystick and jump button)
+                document.getElementById('jump-btn').onclick = () => { jump = true; };
+                // Simple joystick handling
+            } else {
+                window.addEventListener('keydown', onKeyDown, false);
+            }
 
-      // Touch (Mobile) controls
-      const joystick = document.getElementById('joystick');
-      joystick.addEventListener('touchstart', e => {
-        const touch = e.touches[0];
-        touchControls.left = touch.clientX < window.innerWidth / 2;
-        touchControls.right = touch.clientX > window.innerWidth / 2;
-      });
-      joystick.addEventListener('touchend', () => {
-        touchControls.left = touchControls.right = false;
-      });
+            // Animation Loop
+            animate();
+        }
 
-      const jumpButton = document.getElementById('jump-button');
-      jumpButton.addEventListener('click', () => {
-        // Handle jump action (we can extend this later)
-        console.log("Jump Button Pressed");
-      });
+        function onKeyDown(event) {
+            if (event.code === 'Space') {
+                jump = true;
+            }
+            if (event.code === 'ArrowUp') {
+                camera.rotation.x -= 0.1;
+            }
+            if (event.code === 'ArrowDown') {
+                camera.rotation.x += 0.1;
+            }
+            if (event.code === 'ArrowLeft') {
+                camera.rotation.y -= 0.1;
+            }
+            if (event.code === 'ArrowRight') {
+                camera.rotation.y += 0.1;
+            }
+        }
 
-      // Game Loop
-      function animate() {
-        requestAnimationFrame(animate);
+        // Function to create the obby stages, checkpoints, and killbricks
+        function createObby() {
+            let stage, checkpoint, killbrick;
+            let stageCount = 20;
 
-        // Player movement
-        if (keys['w'] || touchControls.up) player.position.z -= 0.1;
-        if (keys['s']) player.position.z += 0.1;
-        if (keys['a'] || touchControls.left) player.position.x -= 0.1;
-        if (keys['d'] || touchControls.right) player.position.x += 0.1;
+            for (let i = 0; i < stageCount; i++) {
+                stage = new THREE.Mesh(
+                    new THREE.BoxGeometry(5, 1, 5),
+                    new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+                );
+                stage.position.y = i * 2;
+                stage.position.z = -i * 10;
+                scene.add(stage);
 
-        // Camera follows player
-        camera.position.x = player.position.x;
-        camera.position.y = player.position.y + 5;
-        camera.position.z = player.position.z + 10;
-        camera.lookAt(player.position);
+                // Add checkpoints
+                checkpoint = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.5),
+                    new THREE.MeshBasicMaterial({ color: 0x0000ff })
+                );
+                checkpoint.position.set(0, i * 2 + 1, -i * 10);
+                scene.add(checkpoint);
 
-        renderer.render(scene, camera);
-      }
+                // Add killbricks
+                killbrick = new THREE.Mesh(
+                    new THREE.BoxGeometry(5, 1, 5),
+                    new THREE.MeshBasicMaterial({ color: 0xff0000 })
+                );
+                killbrick.position.set(0, i * 2 + 1, -i * 10 + 2);
+                scene.add(killbrick);
+            }
+        }
 
-      animate();
-    }
-  </script>
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (jump) {
+                player.position.y += 0.2;
+                setTimeout(() => { player.position.y -= 0.2; jump = false; }, 200);
+            }
+
+            // Basic movement
+            if (player.position.y < 0) {
+                player.position.y = 1;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
+    </script>
 </body>
 </html>
